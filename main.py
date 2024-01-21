@@ -35,7 +35,7 @@ def main():
     and enters the game loop to handle player input,
     character animations, and game state
     """
-    warrior_attack_sound, wizard_attack_sound, window, \
+    window, \
         arena, backGround, backGroundRec, warriorActionFramesMap, \
         wizardActionFramesMap = initialize_game()
     gameLoop(

@@ -68,54 +68,15 @@ player1_health = 100
 player2_health = 100
 warrior_frame = 0
 wizard_frame = 0
-p1_attack_pressed = False
-p2_attack_pressed = False
-attack_flag = False
 animation_cooldown = 60
-player1 = pygame.Rect(200, 330, 100, 200)
-player2 = pygame.Rect(900, 330, 100, 200)
-PLAYERSPEED = 3
-JUMPSPEED = 10
-actions = ['run', 'jump', 'attack', 'dead', 'fall', 'idle', 'take_hit']
-warrior_sheet_paths = ['warriorSprites/Run.png',
-                       'warriorSprites/Jump.png',
-                       'warriorSprites/Attack2.png',
-                       'warriorSprites/Death.png',
-                       'warriorSprites/Fall.png',
-                       'warriorSprites/Idle.png',
-                       'warriorSprites/Takehit.png'
-                       ]
-warrior_frames_per_action = [8, 3, 7, 7, 3, 10, 3]
-warrior_frame_size = (162, 162)
-warrior_scale = 5
-wizard_sheet_paths = ['wizardSprites/Run.png',
-                      'wizardSprites/Jump.png',
-                      'wizardSprites/Attack1.png',
-                      'wizardSprites/Death.png',
-                      'wizardSprites/Fall.png',
-                      'wizardSprites/Idle.png',
-                      'wizardSprites/Takehit.png'
-                      ]
-wizard_frames_per_action = [8, 2, 8, 7, 2, 8, 3]
-wizard_frame_size = (250, 250)
-wizard_scale = 3
-player1_health = 100
-player2_health = 100
-ATTACK_DISTANCE = 170
-ATTACK_DAMAGE = 20
 player1_rounds_won = 0
 player2_rounds_won = 0
-rounds_to_win = 3
 current_round = 0
 dead_animation_start_time = 0
 dead_animation_triggered = False
 loser = None
 dead_animation_frame_counter = 0
-warrior_current_action = 'idle'
-wizard_current_action = 'idle'
 dead_animation_duration = 2000
-warrior_frame = 0
-wizard_frame = 0
 pygame.mixer.init()
 background_music = pygame.mixer.Sound("background.mp3")
 warrior_attack_sound = pygame.mixer.Sound("sword.wav")
@@ -139,8 +100,7 @@ def get_frame(sheet_path, frame_index, frame_size, target_size):
     Returns:
         pygame.Surface: Resized frame as a Pygame surface.
     """
-    full_path = os.path.join(sheet_path)
-    sheet = pygame.image.load(full_path).convert_alpha()
+    sheet = pygame.image.load(sheet_path).convert_alpha()
     frame_x = frame_index * frame_size[0]
     frame_y = 0
     original_frame = sheet.subsurface(
@@ -651,17 +611,11 @@ def initialize_game():
     Initialize the Pygame window, background music, and character action frames.
 
     Returns:
-        tuple: Pygame sound objects for warrior and wizard attacks,
         Pygame window,
                game arena rectangle, background image, background rectangle,
                warrior action frames map, and wizard action frames map.
     """
     pygame.init()
-    pygame.mixer.init()
-    background_music = pygame.mixer.Sound("background.mp3")
-    warrior_attack_sound = pygame.mixer.Sound("sword.wav")
-    wizard_attack_sound = pygame.mixer.Sound("magic.wav")
-    background_music.play(-1)
     window = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     arena = window.get_rect()
     backGround = pygame.image.load("stage.jpg")
@@ -681,7 +635,7 @@ def initialize_game():
                                               wizard_frame_size,
                                               wizard_scale
                                               )
-    return warrior_attack_sound, wizard_attack_sound, window, arena, \
+    return window, arena, \
         backGround, backGroundRec, warriorActionFramesMap, wizardActionFramesMap
 
 
