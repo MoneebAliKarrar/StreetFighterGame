@@ -648,18 +648,22 @@ def gameLoop(
              warrior_current_action, wizard_current_action,
              p1_jump_count, p2_jump_count, dead_animation_triggered,
              current_round, player1_rounds_won, player2_rounds_won,
-             loser, last_update, dead_animation_frame_counter
+             loser, last_update, dead_animation_frame_counter,
+             dead_animation_start_time
              ):
     """
     Main game loop.
 
     Args:
-        window: Pygame window.
-        arena: Rectangle representing the game area.
-        backGround: Background image.
-        backGroundRec: Rectangle representing the background image position.
-        warriorActionFramesMap: Dictionary mapping warrior actions to frames.
-        wizardActionFramesMap: Dictionary mapping wizard actions to frames.
+        window (pygame.Surface): Pygame window.
+        arena (pygame.Rect): Rectangle representing the game area.
+        backGround (pygame.Surface): Background image.
+        backGroundRec (pygame.Rect): Rectangle representing
+        the background image position.
+        warriorActionFramesMap (dict): Dictionary mapping
+        warrior actions to frames.
+        wizardActionFramesMap (dict): Dictionary mapping wizard
+        actions to frames.
         player1_health (int): Player 1's health.
         player2_health (int): Player 2's health.
         p1_is_jumping (bool): Whether Player 1 is jumping.
@@ -674,14 +678,16 @@ def gameLoop(
         wizard_current_action (str): Current action for the wizard.
         p1_jump_count (int): Counter for Player 1's jump progress.
         p2_jump_count (int): Counter for Player 2's jump progress.
-        dead_animation_triggered (bool):
-        Whether the dead animation is triggered.
+        dead_animation_triggered (bool): Whether the dead animation
+        is triggered.
         current_round (int): Current game round.
         player1_rounds_won (int): Number of rounds won by Player 1.
         player2_rounds_won (int): Number of rounds won by Player 2.
         loser (str): Player who lost the game.
         last_update (int): Timestamp of the last animation update.
         dead_animation_frame_counter (int): Counter for dead animation frames.
+        dead_animation_start_time (int): Timestamp when the dead
+        animation was triggered.
     """
     fpsClock = pygame.time.Clock()
     welcome_screen(window, arena)
@@ -725,18 +731,16 @@ def gameLoop(
                                           p2_jump_count
                                           )
         window.blit(backGround, backGroundRec)
-        warrior_frame_to_draw = warriorActionFramesMap[
-                                                       warrior_current_action
-                                                       ][warrior_frame]
-        wizard_frame_to_draw = wizardActionFramesMap[
-                                                     wizard_current_action
-                                                     ][wizard_frame]
         warrior_frame_to_draw, \
-            wizard_frame_to_draw = handleDirection(
-                                                   warrior_frame_to_draw,
-                                                   wizard_frame_to_draw,
-                                                   player1, player2
-                                                   )
+            wizard_frame_to_draw = \
+            get_player_frames_to_draw(
+                                     warriorActionFramesMap,
+                                     wizardActionFramesMap,
+                                     warrior_current_action,
+                                     wizard_current_action,
+                                     warrior_frame, wizard_frame,
+                                     player1, player2
+                                     )
         if not dead_animation_triggered:
             window.blit(warrior_frame_to_draw, (player1.x-350, player1.y-300))
             window.blit(wizard_frame_to_draw, (player2.x-320, player2.y-300))
@@ -746,35 +750,20 @@ def gameLoop(
                        )
         draw_bars(window, player1_health, player2_health)
 
-        if player1_health <= 0:
-            player2_rounds_won += 1
-            player1_health, player2_health, \
-                current_round, player1.x, \
-                player2.x, warrior_current_action, \
-                wizard_current_action, \
-                p1_got_hit, p2_got_hit = reset_game(
-                                                    current_round,
-                                                    player1.x, player2.x,
-                                                    warrior_current_action,
-                                                    wizard_current_action,
-                                                    p1_got_hit, p2_got_hit
-                                                    )
-            display_winning_screen("Player 2 Wins The Round!", window)
-            print(warrior_current_action)
-        elif player2_health <= 0:
-            player1_rounds_won += 1
-            player1_health, player2_health, \
-                current_round, player1.x, \
-                player2.x, warrior_current_action, \
-                wizard_current_action, \
-                p1_got_hit, p2_got_hit = reset_game(
-                                                    current_round,
-                                                    player1.x, player2.x,
-                                                    warrior_current_action,
-                                                    wizard_current_action,
-                                                    p1_got_hit, p2_got_hit
-                                                    )
-            display_winning_screen("Player 1 Wins The Round!", window)
+        player1_health, player2_health, player1_rounds_won, \
+            player2_rounds_won, current_round, \
+            warrior_current_action, wizard_current_action, \
+            p1_got_hit, \
+            p2_got_hit = handle_round_end(
+                                          window, player1_health,
+                                          player2_health, current_round,
+                                          player1, player2,
+                                          warrior_current_action,
+                                          wizard_current_action,
+                                          p1_got_hit, p2_got_hit,
+                                          player1_rounds_won,
+                                          player2_rounds_won
+                                          )
 
         if current_round == 3 and not dead_animation_triggered:
             if player1_rounds_won > player2_rounds_won:
@@ -783,7 +772,6 @@ def gameLoop(
                 loser = 'player1'
             dead_animation_start_time = pygame.time.get_ticks()
             dead_animation_triggered = True
-
         if dead_animation_triggered:
             dead_animation_current_time = \
                     pygame.time.get_ticks() - dead_animation_start_time
@@ -833,3 +821,109 @@ def gameLoop(
                             (player2.x - 320, player2.y - 300))
         pygame.display.flip()
         fpsClock.tick(100)
+
+
+def get_player_frames_to_draw(
+                              warriorActionFramesMap, wizardActionFramesMap,
+                              warrior_current_action, wizard_current_action,
+                              warrior_frame, wizard_frame,
+                              player1, player2
+                              ):
+    """
+    Get the frames to draw for the warrior and wizard players based on their
+    current actions and positions.
+
+    Args:
+        warriorActionFramesMap (dict): Dictionary mapping
+        warrior actions to frames.
+        wizardActionFramesMap (dict): Dictionary mapping wizard
+        actions to frames.
+        warrior_current_action (str): Current action for the warrior.
+        wizard_current_action (str): Current action for the wizard.
+        warrior_frame (int): Frame index for the warrior's current action.
+        wizard_frame (int): Frame index for the wizard's current action.
+        player1 (pygame.Rect): Rectangle representing Player 1's position.
+        player2 (pygame.Rect): Rectangle representing Player 2's position.
+
+    Returns:
+        pygame.Surface, pygame.Surface: Two pygame.Surface objects representing
+        the frames to draw for the warrior and wizard players after
+        handling their directions.
+    """
+    warrior_frame_to_draw = warriorActionFramesMap[
+                                                       warrior_current_action
+                                                       ][warrior_frame]
+    wizard_frame_to_draw = wizardActionFramesMap[
+                                                    wizard_current_action
+                                                    ][wizard_frame]
+    warrior_frame_to_draw, \
+        wizard_frame_to_draw = handleDirection(
+                                                warrior_frame_to_draw,
+                                                wizard_frame_to_draw,
+                                                player1, player2
+                                                )
+    return warrior_frame_to_draw, wizard_frame_to_draw
+
+
+def handle_round_end(
+                    window, player1_health, player2_health,
+                    current_round, player1, player2,
+                    warrior_current_action, wizard_current_action,
+                    p1_got_hit, p2_got_hit, player1_rounds_won,
+                    player2_rounds_won
+                    ):
+    """
+    Check if the current round has ended and handle the consequences.
+
+    Args:
+        window: Pygame window.
+        player1_health (int): Player 1's health.
+        player2_health (int): Player 2's health.
+        current_round (int): Current game round.
+        player1 (pygame.Rect): Rectangle representing Player 1's position.
+        player2 (pygame.Rect): Rectangle representing Player 2's position.
+        warrior_current_action (str): Current action for the warrior.
+        wizard_current_action (str): Current action for the wizard.
+        p1_got_hit (bool): Whether Player 1 got hit in the current round.
+        p2_got_hit (bool): Whether Player 2 got hit in the current round.
+        player1_rounds_won (int): Number of rounds won by Player 1.
+        player2_rounds_won (int): Number of rounds won by Player 2.
+
+    Returns:
+        int, int, int, int, int, str, str, bool, bool: Updated health,
+        rounds won, current round, player positions, and action states
+        after handling the round end.
+    """
+    if player1_health <= 0:
+        player2_rounds_won += 1
+        player1_health, player2_health, \
+            current_round, player1.x, \
+            player2.x, warrior_current_action, \
+            wizard_current_action, \
+            p1_got_hit, p2_got_hit = reset_game(
+                                                current_round,
+                                                player1.x, player2.x,
+                                                warrior_current_action,
+                                                wizard_current_action,
+                                                p1_got_hit, p2_got_hit
+                                                )
+        display_winning_screen("Player 2 Wins The Round!", window)
+        print(warrior_current_action)
+    elif player2_health <= 0:
+        player1_rounds_won += 1
+        player1_health, player2_health, \
+            current_round, player1.x, \
+            player2.x, warrior_current_action, \
+            wizard_current_action, \
+            p1_got_hit, p2_got_hit = reset_game(
+                                                current_round,
+                                                player1.x, player2.x,
+                                                warrior_current_action,
+                                                wizard_current_action,
+                                                p1_got_hit, p2_got_hit
+                                                )
+        display_winning_screen("Player 1 Wins The Round!", window)
+
+    return player1_health, player2_health, player1_rounds_won, \
+        player2_rounds_won, current_round, warrior_current_action, \
+        wizard_current_action, p1_got_hit, p2_got_hit

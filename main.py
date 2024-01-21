@@ -47,8 +47,8 @@ def main():
             warrior_current_action, wizard_current_action,
             p1_jump_count, p2_jump_count, dead_animation_triggered,
             current_round, player1_rounds_won, player2_rounds_won,
-            loser, last_update, dead_animation_frame_counter
-            )
+            loser, last_update, dead_animation_frame_counter,
+            dead_animation_start_time)
 
 
 if __name__ == "__main__":
